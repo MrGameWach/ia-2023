@@ -1,0 +1,306 @@
+laberinto 1 rand
+import os
+import random 
+import time
+from copy import deepcopy
+
+class Nodo:
+    def __init__(self, data):
+        self.data = data
+        self.sons = []
+        self.father = None
+        self.cost = None
+        self.heuristic = None
+        
+        
+    def set_son(self, son):
+        if son is not None:
+            self.sons.append(son)
+            son.father = self
+                
+    def get_sons(self):
+        return self.sons
+    
+    def set_padre(self, father):
+        self.padre = father
+        
+    def get_father(self):
+        return self.father
+
+    def set_data(self, data):
+        self.datos = data
+    
+    def get_data(self):
+        return self.data
+    
+    def set_cost(self, cost):
+        self.costo = cost
+        
+    def get_cost(self):
+        return self.cost
+
+    def set_heuristic(self, heuristic):
+        self.heuristic = heuristic
+        
+    def get_heuristic(self):
+        return self.heuristic
+
+    def set_mov(self, mov):
+        self.mov = mov
+
+    def get_mov(self):
+        return self.mov
+    
+    def equal(self, nodo):
+        if self.get_data() == nodo.get_data():
+            return True
+        else:
+            return False
+    
+    def in_list(self, list_nodes):
+        listed = False
+        for n in list_nodes:
+            if self.equal(n):
+                listed = True
+        return listed
+    
+    def __str__(self):
+        return str(self.get_data())
+
+
+
+def createMaze(width, height, obs):
+
+    maze = []
+
+    # Se crea el terreno
+    for i in range(height):
+        row = []
+        for j in range(width):
+            row.append("#")
+        maze.append(row)
+
+    space = (width * height) - obs
+    n = 1
+    x = random.randint(0, width - 1)
+    y = random.randint(0, height - 1)
+    maze[y][x] = " "
+
+    # Esto se hace hasta que se cumpla la cantidad de espacios correspondiente
+    while n < space:
+        mov = random.randint(0, 3)
+        if mov == 0:
+            cant = random.randint(0, height - 1 - y)
+            for i in range(cant):
+                if(n >= space):
+                    break
+                y += 1
+                if(maze[y][x] != "."):
+                    maze[y][x] = "."
+                    n += 1
+
+        if mov == 1:
+            cant = random.randint(0, y)
+            for i in range(cant):
+                if(n >= space):
+                    break
+                y -= 1
+                if(maze[y][x] != "."):
+                    maze[y][x] = "."
+                    n += 1
+
+        if mov == 2:
+            cant = random.randint(0, width - 1 - x)
+            for i in range(cant):
+                if(n >= space):
+                    break
+                x += 1
+                if(maze[y][x] != "."):
+                    maze[y][x] = "."
+                    n += 1
+
+        if mov == 3:
+            cant = random.randint(0, x)
+            for i in range(cant):
+                if(n >= space):
+                    break
+                x -= 1
+                if(maze[y][x] != "."):
+                    maze[y][x] = "."
+                    n += 1
+
+    while True:
+        x = random.randint(0, width - 1)
+        y = random.randint(0, height - 1)
+        if maze[y][x] != "#":
+            maze[y][x] = "*"
+            break
+
+    return maze
+
+def getPosition(maze):
+    for i in range(len(maze)):
+        for j in range(len(maze[i])):
+            if maze[i][j] == "*":
+                return [i, j]
+
+def createGoal(maze, width, height):
+    maze_goal = deepcopy(maze)
+    pos = getPosition(maze)
+    maze_goal[pos[0]][pos[1]] = "."
+    while True:
+        x = random.randint(0, width - 1)
+        y = random.randint(0, height - 1)
+        if maze_goal[y][x] != "#" and  maze_goal[y][x] != "*":
+            maze_goal[y][x] = "*"
+            break
+
+    return maze_goal
+
+def printResult(crono, result, steps):
+    for step in result:
+        os.system('cls')
+        print("Solution found in: " + str(crono) + "s")
+        maze = step
+        for i in range(len(maze)):
+            for j in range(len(maze[i])):
+                print(maze[i][j] + " ", end="")
+            print("\n")
+        print(steps)
+        time.sleep(0.5)
+
+def ManhattanDis(innit_pos, goal_pos):
+    x_dis = abs(innit_pos[1] - goal_pos[1])
+    y_dis = abs(innit_pos[0] - goal_pos[0])
+    return x_dis + y_dis
+
+def heuristics(nodo):
+    return nodo.get_heuristic()
+
+def bpa(innit_state, solution_state, height, width):
+    solved = False
+    visited_nodes = []
+    border_nodes = []
+    innit_node = Nodo(innit_state)
+    pos_innit = getPosition(innit_state)
+    pos_goal = getPosition(solution_state) 
+    innit_node.set_heuristic(ManhattanDis(pos_innit, pos_goal))
+    border_nodes.append(innit_node)
+    
+    while solved == False and len(border_nodes) != 0:
+        border_nodes = sorted(border_nodes, key=heuristics, reverse=False)
+        actual_node = border_nodes.pop(0)
+        visited_nodes.append(actual_node)
+        if actual_node.get_data() == solution_state:
+            solved = True
+            return actual_node
+        else:
+            sons = []
+
+            son_data = deepcopy(actual_node.get_data())
+            pos = getPosition(actual_node.get_data())
+
+            y = pos[0]
+            x = pos[1]
+            if y != 0 and son_data[y - 1][x] != "#":
+                son_data[y][x] = "."
+                y -= 1
+                son_data[y][x] = "*"
+                son_up = Nodo(son_data)
+                son_up.set_mov("Up")
+                son_up.set_heuristic(ManhattanDis([y, x], pos_goal))
+                sons.append(son_up)
+
+            son_data = deepcopy(actual_node.get_data())
+            y = pos[0]
+            x = pos[1]
+            if y != height - 1 and son_data[y + 1][x] != "#":
+                son_data[y][x] = "."
+                y += 1
+                son_data[y][x] = "*"
+                son_down = Nodo(son_data)
+                son_down.set_mov("Down")
+                son_down.set_heuristic(ManhattanDis([y, x], pos_goal))
+                sons.append(son_down)
+
+            son_data = deepcopy(actual_node.get_data())
+            y = pos[0]
+            x = pos[1]
+            if x != 0 and son_data[y][x - 1] != "#":
+                son_data[y][x] = "."
+                x -= 1
+                son_data[y][x] = "*"
+                son_left = Nodo(son_data)
+                son_left.set_mov("Left")
+                son_left.set_heuristic(ManhattanDis([y, x], pos_goal))
+                sons.append(son_left)
+
+            son_data = deepcopy(actual_node.get_data())
+            y = pos[0]
+            x = pos[1]
+            if x != width - 1 and son_data[y][x + 1] != "#":
+                son_data[y][x] = "."
+                x += 1
+                son_data[y][x] = "*"
+                son_right = Nodo(son_data)
+                son_right.set_mov("Right")
+                son_right.set_heuristic(ManhattanDis([y, x], pos_goal))
+                sons.append(son_right)
+            
+            for son in sons:
+                if not son.in_list(visited_nodes) and not son.in_list(border_nodes):
+                    actual_node.set_son(son)
+                    border_nodes.append(son)
+
+
+if __name__ == "__main__":
+    width = int(input("Introduzca el ancho del laberinto: "))
+    height = int(input("Introduzca el alto del laberinto: "))
+    obs = int(input("Introduzca la cantidad de obstaculos: "))
+    while obs > (width * height * 0.8):
+        nval = int(input("Error, la cantidad de paredes no debe ocupar más que el 80% del laberinto: "))
+        obs = nval
+
+    maze = createMaze(width, height, obs)
+    maze_goal = createGoal(maze, width, height)
+
+    # maze = [[".", "#", ".", "#", "#", "#", ".", ".", "#", "#"],
+    #         [".", "#", ".", "#", ".", ".", ".", ".", "#", "#"],
+    #         [".", "#", ".", "#", ".", "#", "#", ".", ".", "#"],
+    #         [".", "#", ".", "#", ".", "#", "#", ".", ".", "#"],
+    #         [".", ".", ".", ".", ".", ".", "#", "#", ".", "."],
+    #         ["#", "#", ".", ".", "#", ".", "#", "#", ".", "*"],
+    #         [".", "#", ".", "#", "#", ".", "#", "#", "#", "#"],
+    #         [".", ".", ".", "#", "#", ".", ".", ".", "#", "."],
+    #         [".", "#", ".", "#", ".", ".", "#", ".", "#", "."],
+    #         ["#", "#", "#", "#", "#", "#", "#", ".", ".", "."]]
+
+    
+    # maze_goal = [[".", "#", ".", "#", "#", "#", ".", ".", "#", "#"],
+    #         [".", "#", ".", "#", ".", ".", ".", ".", "#", "#"],
+    #         [".", "#", ".", "#", ".", "#", "#", ".", ".", "#"],
+    #         [".", "#", ".", "#", ".", "#", "#", ".", ".", "#"],
+    #         [".", ".", ".", ".", ".", ".", "#", "#", ".", "."],
+    #         ["#", "#", ".", ".", "#", ".", "#", "#", ".", "."],
+    #         [".", "#", ".", "#", "#", ".", "#", "#", "#", "#"],
+    #         [".", ".", ".", "#", "#", ".", ".", ".", "#", "*"],
+    #         [".", "#", ".", "#", ".", ".", "#", ".", "#", "."],
+    #         ["#", "#", "#", "#", "#", "#", "#", ".", ".", "."]]
+
+    inicio = time.time()
+    solution = bpa(maze, maze_goal, width, height)
+    fin = time.time()
+
+    result = []
+    steps = []
+    node = solution
+
+    while node.get_father() is not None:
+        result.append(node.get_data())
+        steps.append(node.get_mov())
+        node = node.get_father()
+
+    result.reverse()
+    steps.reverse()
+
+    printResult(fin-inicio, result, steps)
