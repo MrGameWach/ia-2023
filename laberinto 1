@@ -1,0 +1,161 @@
+import os
+import random 
+import time
+
+lab=        [3,2,2,2,1,2,1,1,2,2,9,
+             2,1,1,2,2,2,2,2,2,2,9,
+             2,1,2,2,1,2,2,1,2,1,9,
+             1,2,2,2,1,2,2,2,2,1,9,
+             2,2,2,2,1,1,2,1,2,2,9,
+             2,1,1,2,2,1,2,2,2,4,9,
+             2,1,2,2,2,2,2,2,2,1,9,
+             2,1,2,1,1,1,1,1,2,1,9,
+             2,2,2,2,2,2,2,1,2,2,9,
+             1,2,2,2,1,1,1,2,2,2
+             ]
+
+# 3 es el punto de inicio
+# 2 espacios en blanco
+# 1 paredes 
+# 4 soluciones  o metas
+# 7 tunel por si acaso 
+# 5 trmp  
+
+camino= ""
+laberinto= []
+linea = 0
+laberinto.append([])
+resp= []
+max_vertical = 0
+max_horizontal = 0
+piso = []
+buscador =[]
+
+for imp in lab :
+    if imp== 9:
+        laberinto.append([])
+        linea += 1
+    else : 
+        laberinto[linea].append(imp)
+for a in laberinto:
+    max_vertical += 1
+    max_horizontal =0
+    for b in a:
+        max_horizontal +=1
+def setup():
+    vertical = 0
+    horizontal =0
+    posicion1= False
+    posicion2= False
+    posicion3= False
+    posicion4= False
+    for a in laberinto:
+        horizontal = 0
+        for buscar in a :
+            if buscar == 3:
+                inicio=[vertical,horizontal]
+            if buscar == 4:
+                salida=[vertical,horizontal]
+            if buscar == 7 and posicion1== False:
+                entrada =[vertical,horizontal]
+                posicion1 = True
+            elif (posicion1 == False):
+                entrada = [-1,-1]
+            if buscar == 8 and posicion2 == False:
+                salida=[vertical,horizontal]
+                posicion2=True
+            elif ( posicion2== False):
+                salida = [-1,-1]
+            if buscar ==5:
+                trampap= [vertical,horizontal]
+                posicion3 = True
+            elif (posicion3 == False):
+                trampap= [-1,-1]
+            if buscar == 6:
+                trampa= [vertical,horizontal]
+                posicion4 =True
+            elif (posicion4 == False):
+                trampa = [-1,-1]
+                horizontal += 1
+                vertical += 1
+            buscador =[inicio[0],inicio[1]]
+        confirmar(inicio[0],inicio[1],camino,salida,trampa,trampap,entrada)
+    
+def dibujar():
+        impri= "\t\t\t\t"
+        for imp in lab:
+            if imp ==9:
+                print(impri)
+                impri = "\t\t\t\t"
+            else:
+                impri = str(str(impri)+str(imp))
+        print(impri)
+def caminos():
+        num =0
+        for a in laberinto:
+            piso.append([])
+            for b in a:
+                piso [num].append(False)
+            num += 1
+    #agrega valores booleanos a la matriz
+
+def caminar ( opcion, vertical ,horizontal, camino, salida, trampa , trampap , entrada):
+        camino += opcion
+        if (opcion == "D"):
+            confirmar(vertical+1,horizontal,camino,salida, trampa,trampap,entrada)
+        if (opcion == "L"):
+            confirmar(vertical,horizontal-1,camino,salida, trampa,trampap,entrada)
+        if (opcion == "U"):
+            confirmar(vertical-1,horizontal,camino,salida, trampa,trampap,entrada)
+        if (opcion == "R"):
+            confirmar(vertical,horizontal+1,camino,salida, trampa,trampap,entrada)
+def check(vertical, horizontal):
+        if ( vertical==-1 or horizontal ==-1 or vertical== max_vertical or horizontal== max_horizontal or laberinto[vertical][horizontal]==1 ):
+            return False    
+        return True
+def confirmar(vertical, horizontal,camino,salida,trampa,trampap,entrada):        
+        if (vertical == -1 or horizontal == -1 or vertical== max_vertical or horizontal == max_horizontal or laberinto[vertical][horizontal]== 1 or piso[vertical][horizontal]== True):
+            return
+        if( laberinto [ vertical] [horizontal] ==4):
+            resp.append(camino)
+        piso[vertical][horizontal] = True
+        if (laberinto[vertical][horizontal] == 7 and salida [0]!= -1):
+            vertical= salida[0]
+            horizontal = salida[1]
+            piso[vertical][horizontal]= True
+        else:
+            vertical = entrada[0]
+            horizontal = entrada [1]
+            piso[vertical][horizontal]= True
+        if ( laberinto[vertical][horizontal] == 5 and trampa [0] != -1 ):
+            laberinto[trampa[0]][trampa[1]]=2
+        elif (piso[trampap[0]][trampap[1]]== False and trampap[0]!= -1):
+            laberinto[trampa[0]][trampa[1]]= 2
+        if (check(vertical+1, horizontal)== True):
+            caminar("D", vertical, horizontal,camino, salida,trampa, trampap, entrada)
+        if (check(vertical, horizontal-1)== True):
+            caminar("L", vertical, horizontal,camino, salida,trampa, trampap, entrada)
+        if (check(vertical-1, horizontal)== True):
+            caminar("U", vertical, horizontal,camino, salida,trampa, trampap, entrada)
+        if (check(vertical, horizontal+1)== True):
+            caminar("R", vertical, horizontal,camino, salida,trampa, trampap, entrada)
+        piso[vertical][horizontal] == False
+
+dibujar()
+caminos()
+setup()
+if resp== []:
+    print("no hay solucion")
+else:
+    print("=",resp)
+    menor = 100
+    heuristica= []
+    for a in resp:
+        if(menor > len(a)):
+            menor = len(a)
+    for a in resp:
+        if(len(a) == menor):
+            heuristica.append([a])
+    print("la(s) soluciones mas optimas son:")
+    for a in heuristica:
+        print(a) 
